@@ -1,0 +1,45 @@
+name: C Build / Run / Disassemble
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential binutils
+
+      - name: Build programs
+        run: |
+          mkdir -p build
+          # Compile sum.c
+          gcc -O0 -g -o build/sum C/src/sum.c
+          # Compile fibonacci.c
+          gcc -O0 -g -o build/fibonacci C/src/fibonacci.c
+
+      - name: Run programs
+        run: |
+          echo "Running sum.c:"
+          ./build/sum
+          echo ""
+          echo "Running fibonacci.c:"
+          ./build/fibonacci
+
+      - name: Disassemble programs
+        run: |
+          objdump -d -M intel build/sum > build/sum.disasm
+          objdump -d -M intel build/fibonacci > build/fibonacci.disasm
+
+      - name: Upload artifacts (binaries & disassembly)
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            build/sum
+            build/sum.disasm
+            build/fibonacci
+            build/fibonacci.disasm

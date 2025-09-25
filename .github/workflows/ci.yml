@@ -16,7 +16,7 @@ jobs:
       - name: Build (gcc)
         run: |
           mkdir -p build
-          gcc -O0 -g -o build/sum src/sum.c
+          gcc -O0 -g -o build/sum C/src/sum.c
 
       - name: Run program
         run: ./build/sum

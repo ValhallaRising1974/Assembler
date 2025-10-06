@@ -1,0 +1,29 @@
+name: Build and Run ASM
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install NASM
+        run: sudo apt-get update && sudo apt-get install nasm -y
+
+      - name: Compile ASM
+        run: |
+          nasm -f elf32 fibonacci.asm -o fibonacci.o
+          ld -m elf_i386 fibonacci.o -o fibonacci
+
+      - name: Run ASM program
+        run: |
+          chmod +x ./fibonacci
+          ./fibonacci

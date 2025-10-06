@@ -1,0 +1,19 @@
+; PWM LED – Assembly puro (ATmega328P)
+.include "m328pdef.inc"
+
+.org 0x00
+    rjmp RESET
+
+RESET:
+    sbi DDRD, PD6              ; Define PD6 como saída
+
+    ldi r16, (1<<COM0A1) | (1<<WGM01) | (1<<WGM00)  ; Fast PWM, não invertido
+    out TCCR0A, r16
+
+    ldi r16, (1<<CS01) | (1<<CS00)                 ; Prescaler 64
+    out TCCR0B, r16
+
+LOOP:
+    ldi r16, 192                ; Duty cycle 75%
+    out OCR0A, r16
+    rjmp LOOP

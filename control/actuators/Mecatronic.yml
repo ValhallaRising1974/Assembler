@@ -1,0 +1,35 @@
+name: Build AVR Assembly
+
+on:
+  push:
+    paths:
+      - "src/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install AVR Toolchain
+        run: |
+          sudo apt update
+          sudo apt install -y avr-libc gcc-avr binutils-avr
+
+      - name: Build .hex from Assembly
+        run: |
+          avr-as src/pwm_led.asm -o pwm_led.o
+          avr-ld pwm_led.o -o pwm_led.elf
+          avr-objcopy -O ihex pwm_led.elf pwm_led.hex
+          mkdir -p dist
+          mv pwm_led.hex dist/
+
+      - name: Upload HEX File
+        uses: actions/upload-artifact@v3
+        with:
+          name: pwm_led_hex
+          path: dist/pwm_led.hex

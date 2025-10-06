@@ -1,0 +1,44 @@
+section .data
+    n db 10          ; número de termos
+    msg db "Fibonacci: ", 0
+
+section .bss
+    a resb 1
+    b resb 1
+    temp resb 1
+    i resb 1
+
+section .text
+    global _start
+
+_start:
+    mov byte [a], 0
+    mov byte [b], 1
+    mov byte [i], 0
+
+print_loop:
+    mov al, [a]
+    ; Aqui seria o lugar para imprimir o valor de AL (requer syscall ou função externa)
+    ; Para simplificação, este exemplo não imprime os valores.
+
+    ; Fibonacci: temp = a + b
+    mov al, [a]
+    add al, [b]
+    mov [temp], al
+
+    ; Atualiza a = b, b = temp
+    mov al, [b]
+    mov [a], al
+    mov al, [temp]
+    mov [b], al
+
+    ; Incrementa contador
+    inc byte [i]
+    mov al, [i]
+    cmp al, [n]
+    jne print_loop
+
+    ; Exit syscall
+    mov eax, 1
+    xor ebx, ebx
+    int 0x80

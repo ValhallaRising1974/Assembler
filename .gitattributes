@@ -1,0 +1,15 @@
+# ---- Linguist: force Assembly detection ----
+*.asm linguist-language=Assembly
+*.s   linguist-language=Assembly
+*.S   linguist-language=Assembly
+*.yasm linguist-language=Assembly
+*.nasm linguist-language=Assembly
+*.inc linguist-language=Assembly
+
+# ---- (Opcional) Ignorar outras linguagens no cálculo ----
+*.c  linguist-detectable=false
+*.h  linguist-detectable=false
+*.cpp linguist-detectable=false
+*.hpp linguist-detectable=false
+*.txt linguist-detectable=false
+README.md linguist-detectable=false

@@ -55,3 +55,15 @@ Minimal assembly studies with **YASM** targeting **ELF64** on Linux (built on Gi
 
 # Run
 ./build/sum
+# Assembler — Valhalla Rising: The Parchment
+![Build](https://github.com/ValhallaRising1974/Assembler/actions/workflows/asm-build.yml/badge.svg)
+
+> **EN-CA:** Minimal assembly (YASM) repository with automatic build & run using GitHub Actions.  
+> **FR-CA :** Dépôt d’assembleur minimal (YASM) avec compilation et exécution automatiques via GitHub Actions.
+
+---
+
+### Tech Stack
+- **Assembler:** YASM (ELF64)
+- **Linker:** LD (GNU binutils)
+- **CI/CD:** GitHub Actions (Ubuntu 24.04)

@@ -39,7 +39,19 @@ Ce dépôt illustre la beauté du bas niveau : comment une logique en C se trans
 
 ```bash
 # Compile
-gcc -O0 -g -o build/sum C/src/sum.c
+# ASM Core – YASM (Linux x86_64)
+
+Minimal assembly studies with **YASM** targeting **ELF64** on Linux (built on GitHub Actions).
+
+- Toolchain: yasm + ld
+- CI: GitHub Actions (`.github/workflows/asm-build.yml`)
+- Entry: `_start` (syscalls)
+
+## Build status
+![Build](https://github.com/ValhallaRising1974/asm-core/actions/workflows/asm-build.yml/badge.svg)
+
+## Files
+- `src/hello.asm` — writes a message and exits.gcc -O0 -g -o build/sum C/src/sum.c
 
 # Run
 ./build/sum

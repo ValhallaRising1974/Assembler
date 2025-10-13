@@ -1,0 +1,49 @@
+name: Build & Run Assembly (YASM)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install YASM and LD
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yasm binutils
+
+      - name: Assemble all .asm to .o
+        run: |
+          mkdir -p build
+          for f in $(find . -name "*.asm"); do
+            base=$(basename "$f" .asm)
+            echo "Assembling $f -> build/$base.o"
+            yasm -f elf64 "$f" -o "build/$base.o"
+          done
+          ls -l build || true
+
+      - name: Link all .o to executables
+        run: |
+          for o in build/*.o; do
+            exe="build/$(basename "$o" .o)"
+            echo "Linking $o -> $exe"
+            ld -o "$exe" "$o"
+            chmod +x "$exe"
+          done
+          ls -l build || true
+
+      - name: Run sample executables (if any)
+        run: |
+          for exe in build/*; do
+            if file "$exe" | grep -q "ELF 64-bit"; then
+              echo "----- Running $exe -----"
+              "$exe" || true
+            fi
+          done

@@ -1,0 +1,15 @@
+name: MSP CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install yasm
+        run: sudo apt-get update && sudo apt-get install -y yasm
+      - name: Build hello_world
+        run: |
+          yasm -f elf64 src/hello_world.asm -o hello_world.o
+          ld hello_world.o -o hello_world
+      - name: Run smoke test
+        run: ./hello_world | grep -q "Hello, ASM!"

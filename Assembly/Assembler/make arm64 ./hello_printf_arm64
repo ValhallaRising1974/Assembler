@@ -1,0 +1,2 @@
+make arm64
+./hello_printf_arm64

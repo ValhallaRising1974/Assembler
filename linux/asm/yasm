@@ -1,0 +1,109 @@
+#include "lyra_integrity.h"
+#include <string.h>
+
+#if defined(__x86_64__) || defined(_M_X64)
+  #define LYRA_X86_64 1
+#else
+  #define LYRA_X86_64 0
+#endif
+
+#if defined(__aarch64__)
+  #define LYRA_ARM64 1
+#else
+  #define LYRA_ARM64 0
+#endif
+
+// ---------------------------
+// Fallback C (CRC32C)
+// Poly refletido: 0x82F63B78 (Castagnoli)
+// init=0xFFFFFFFF, xorout=0xFFFFFFFF
+// ---------------------------
+
+static uint32_t crc32c_table[256];
+static int table_init = 0;
+
+static void crc32c_init_table(void) {
+  if (table_init) return;
+  for (uint32_t i = 0; i < 256; i++) {
+    uint32_t c = i;
+    for (int k = 0; k < 8; k++) {
+      c = (c & 1) ? (0x82F63B78u ^ (c >> 1)) : (c >> 1);
+    }
+    crc32c_table[i] = c;
+  }
+  table_init = 1;
+}
+
+static uint32_t crc32c_c(const uint8_t *p, size_t n) {
+  crc32c_init_table();
+  uint32_t crc = 0xFFFFFFFFu;
+  for (size_t i = 0; i < n; i++) {
+    crc = crc32c_table[(crc ^ p[i]) & 0xFFu] ^ (crc >> 8);
+  }
+  return crc ^ 0xFFFFFFFFu;
+}
+
+// ---------------------------
+// HW accelerate hooks (ASM)
+// Signature: uint32_t lyra_crc32c_hw(const uint8_t* data, size_t len, uint32_t seed);
+// seed aqui será o estado "interno" (antes do xorout).
+// ---------------------------
+#if LYRA_X86_64 || LYRA_ARM64
+uint32_t lyra_crc32c_hw(const uint8_t *data, size_t len, uint32_t seed);
+#endif
+
+// ---------------------------
+// x86_64 runtime check (SSE4.2)
+// ---------------------------
+#if LYRA_X86_64
+#if defined(_MSC_VER)
+  #include <intrin.h>
+  static int has_sse42(void){
+    int cpuInfo[4]; __cpuid(cpuInfo, 1);
+    return (cpuInfo[2] & (1 << 20)) != 0; // SSE4.2
+  }
+#else
+  static int has_sse42(void){
+    unsigned int eax=1, ebx=0, ecx=0, edx=0;
+    __asm__ volatile("cpuid"
+      : "+a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+      :
+      :);
+    return (ecx & (1u << 20)) != 0;
+  }
+#endif
+#endif
+
+// ---------------------------
+// ARM64 compile-time check (CRC32 feature)
+// ---------------------------
+#if LYRA_ARM64
+  #if defined(__ARM_FEATURE_CRC32)
+    #define LYRA_ARM_CRC32 1
+  #else
+    #define LYRA_ARM_CRC32 0
+  #endif
+#endif
+
+uint32_t lyra_crc32c(const void *data, size_t len) {
+  const uint8_t *p = (const uint8_t*)data;
+
+  // HW path (quando disponível)
+#if LYRA_X86_64
+  if (has_sse42()) {
+    // estado interno começa em 0xFFFFFFFF (antes do xorout)
+    uint32_t state = 0xFFFFFFFFu;
+    state = lyra_crc32c_hw(p, len, state);
+    return state ^ 0xFFFFFFFFu;
+  }
+#elif LYRA_ARM64
+  #if LYRA_ARM_CRC32
+    uint32_t state = 0xFFFFFFFFu;
+    state = lyra_crc32c_hw(p, len, state);
+    return state ^ 0xFFFFFFFFu;
+  #endif
+#endif
+
+  // fallback
+  return crc32c_c(p, len);
+}

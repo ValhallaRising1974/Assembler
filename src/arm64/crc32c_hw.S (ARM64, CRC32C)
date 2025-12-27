@@ -1,0 +1,31 @@
+// uint32_t lyra_crc32c_hw(const uint8_t* data, size_t len, uint32_t seed)
+// AAPCS64: x0=data, x1=len, w2=seed
+// retorno: w0 (estado interno final)
+
+        .text
+        .globl  lyra_crc32c_hw
+        .align  2
+
+lyra_crc32c_hw:
+        mov     w0, w2          // state
+        cbz     x1, 3f
+
+        // qwords
+        mov     x3, x1
+        lsr     x3, x3, #3
+        cbz     x3, 2f
+
+1:      ldr     x4, [x0], #8
+        crc32cx w0, w0, x4      // CRC32C over 64-bit
+        subs    x3, x3, #1
+        b.ne    1b
+
+2:      // tail bytes
+        and     x1, x1, #7
+        cbz     x1, 3f
+2b:     ldrb    w4, [x0], #1
+        crc32cb w0, w0, w4      // CRC32C over byte
+        subs    x1, x1, #1
+        b.ne    2b
+
+3:      ret

@@ -1,0 +1,23 @@
+#ifndef LYRA_INTEGRITY_H
+#define LYRA_INTEGRITY_H
+
+#include <stddef.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// CRC32C (Castagnoli). Determinístico em Windows/Linux/macOS.
+uint32_t lyra_crc32c(const void *data, size_t len);
+
+// Conveniência: hash de “string”/blob.
+static inline uint32_t lyra_crc32c_bytes(const uint8_t *p, size_t n) {
+  return lyra_crc32c((const void*)p, n);
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

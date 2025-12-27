@@ -1,0 +1,54 @@
+UNAME_S := $(shell uname -s)
+ARCH    := $(shell uname -m)
+
+CC      ?= cc
+CFLAGS  := -O3 -Wall -Wextra -Iinclude
+LDFLAGS :=
+
+NASM ?= nasm
+ifeq ($(UNAME_S),Darwin)
+  NASM_FMT := macho64
+else
+  NASM_FMT := elf64
+endif
+
+BUILD := build
+OBJ   := $(BUILD)/lyra_crc32c.o $(BUILD)/test_crc32c.o
+
+# Arch-specific asm
+ifeq ($(ARCH),x86_64)
+  ASM_OBJ := $(BUILD)/crc32c_hw.o
+  ASM_SRC := src/x86_64/crc32c_hw.asm
+  ASM_RULE = $(NASM) -f $(NASM_FMT) -o $@ $<
+else ifneq (,$(findstring arm64,$(ARCH)))
+  ASM_OBJ := $(BUILD)/crc32c_hw.o
+  ASM_SRC := src/arm64/crc32c_hw.S
+  ASM_RULE = $(CC) $(CFLAGS) -c -o $@ $<
+else ifneq (,$(findstring aarch64,$(ARCH)))
+  ASM_OBJ := $(BUILD)/crc32c_hw.o
+  ASM_SRC := src/arm64/crc32c_hw.S
+  ASM_RULE = $(CC) $(CFLAGS) -c -o $@ $<
+else
+  ASM_OBJ :=
+  ASM_SRC :=
+endif
+
+all: test
+
+$(BUILD):
+	mkdir -p $(BUILD)
+
+$(BUILD)/lyra_crc32c.o: src/lyra_crc32c.c include/lyra_integrity.h | $(BUILD)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(BUILD)/test_crc32c.o: tests/test_crc32c.c include/lyra_integrity.h | $(BUILD)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(ASM_OBJ): $(ASM_SRC) | $(BUILD)
+	$(ASM_RULE)
+
+test: $(OBJ) $(ASM_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+clean:
+	rm -rf $(BUILD) test

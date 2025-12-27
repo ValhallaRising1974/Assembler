@@ -1,0 +1,43 @@
+; uint32_t lyra_crc32c_hw(const uint8_t* data, size_t len, uint32_t seed)
+; System V x86_64:
+;   rdi=data, rsi=len, edx=seed  (seed = estado interno)
+; retorno: eax (estado interno final)
+
+%ifidn __OUTPUT_FORMAT__, macho64
+  global _lyra_crc32c_hw
+  %define FN _lyra_crc32c_hw
+%else
+  global lyra_crc32c_hw
+  %define FN lyra_crc32c_hw
+%endif
+
+section .text
+FN:
+    ; eax = seed
+    mov     eax, edx
+    test    rsi, rsi
+    jz      .done
+
+    ; processa qwords
+    mov     rcx, rsi
+    shr     rcx, 3
+    jz      .tail
+
+.qloop:
+    crc32   rax, qword [rdi]
+    add     rdi, 8
+    dec     rcx
+    jnz     .qloop
+
+.tail:
+    ; bytes restantes
+    and     rsi, 7
+    jz      .done
+.bloop:
+    crc32   eax, byte [rdi]
+    inc     rdi
+    dec     rsi
+    jnz     .bloop
+
+.done:
+    ret

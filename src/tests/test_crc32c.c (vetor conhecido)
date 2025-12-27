@@ -1,0 +1,16 @@
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+#include "lyra_integrity.h"
+
+int main(void) {
+  const char *s = "123456789";
+  uint32_t crc = lyra_crc32c(s, strlen(s));
+
+  // CRC32C("123456789") = 0xE3069283
+  printf("crc32c=%08X\n", crc);
+  assert(crc == 0xE3069283u);
+
+  puts("OK");
+  return 0;
+}

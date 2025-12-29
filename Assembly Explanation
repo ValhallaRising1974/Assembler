@@ -1,0 +1,2 @@
+
+“I write performance-critical routines in assembly, assemble them into object files, and link them into a C/C++ project through the platform ABI. The C layer provides portability, testing, and clean APIs while assembly provides targeted optimizations.”

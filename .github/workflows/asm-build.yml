@@ -1,3 +1,4 @@
+name: Build & Run Assembly (YASM)
 
 on:
   push:
@@ -8,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,19 +18,42 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y yasm binutils
 
-      - name: Assemble all .asm to .o
+      - name: Assemble all x86_64 NASM/YASM .asm to .o
         run: |
+          set -euo pipefail
           mkdir -p build
-          echo "Finding .asm files (excluding .github and build)..."
+
+          echo "Finding x86_64 YASM sources..."
           while IFS= read -r -d '' f; do
-            base="$(basename "${f%.*}")"
-            echo "Assembling $f -> build/$base.o"
-            yasm -f elf64 "$f" -o "build/$base.o"
+            out="$(printf '%s' "$f" | sed 's|^\./||; s|/|__|g; s|\.asm$||').o"
+            echo "Assembling $f -> build/$out"
+            yasm -f elf64 "$f" -o "build/$out"
           done < <(
             find . \
               -type f -name "*.asm" \
               -not -path "./.github/*" \
               -not -path "./build/*" \
+              -not -path "./ARM64*/*" \
+              -not -path "./winnt32/*" \
               -print0
           )
+
+          echo "Objects:"
           ls -l build || true
+
+      - name: Link & run only objects that define _start
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          for o in build/*.o; do
+            if nm -g "$o" 2>/dev/null | grep -qE '(_start)$'; then
+              exe="${o%.o}"
+              echo "Linking $o -> $exe"
+              ld -o "$exe" "$o"
+              echo "Running $exe"
+              "$exe" || true
+            else
+              echo "Skip link (no _start): $o"
+            fi
+          done

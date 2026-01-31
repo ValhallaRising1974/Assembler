@@ -29,13 +29,8 @@ jobs:
             echo "Assembling $f -> build/$out"
             yasm -f elf64 "$f" -o "build/$out"
           done < <(
-            find . \
-              -type f -name "*.asm" \
-              -not -path "./.github/*" \
-              -not -path "./build/*" \
-              -not -path "./ARM64*/*" \
-              -not -path "./winnt32/*" \
-              -print0
+find "x86_64 (NASM) — src/x86_64" "x86_64 (NASM, System V) — src/x86_64" \
+  -type f -name "*.asm" -print0
           )
 
           echo "Objects:"

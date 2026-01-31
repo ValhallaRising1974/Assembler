@@ -41,19 +41,6 @@ jobs:
           echo "Objects:"
           ls -l build || true
 
-      - name: Link & run only objects that define _start
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-
-          for o in build/*.o; do
-            if nm -g "$o" 2>/dev/null | grep -qE '(_start)$'; then
-              exe="${o%.o}"
-              echo "Linking $o -> $exe"
-              ld -o "$exe" "$o"
-              echo "Running $exe"
-              "$exe" || true
-            else
               echo "Skip link (no _start): $o"
             fi
           done

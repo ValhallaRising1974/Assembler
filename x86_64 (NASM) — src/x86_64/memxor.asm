@@ -9,7 +9,7 @@ memxor:
     shr     rcx, 3              ; qwords
     jz      .tail
 
-.align 16
+align 16
 .qloop:
     mov     r8,  [rsi]
     xor     [rdi], r8

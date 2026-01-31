@@ -1,4 +1,4 @@
-name: Build & Run Assembly (YASM)
+name: Build Assembly (YASM)
 
 on:
   push:
@@ -13,29 +13,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install YASM and LD
+      - name: Install YASM
         run: |
           sudo apt-get update
           sudo apt-get install -y yasm binutils
 
-      - name: Assemble all x86_64 NASM/YASM .asm to .o
+      - name: Assemble only x86_64 YASM sources
+        shell: bash
         run: |
           set -euo pipefail
           mkdir -p build
 
-          echo "Finding x86_64 YASM sources..."
+          echo "Scanning for x86_64 NASM/YASM .asm files..."
           while IFS= read -r -d '' f; do
             out="$(printf '%s' "$f" | sed 's|^\./||; s|/|__|g; s|\.asm$||').o"
             echo "Assembling $f -> build/$out"
             yasm -f elf64 "$f" -o "build/$out"
           done < <(
-find "x86_64 (NASM) — src/x86_64" "x86_64 (NASM, System V) — src/x86_64" \
-  -type f -name "*.asm" -print0
+            find . -type f -name "*.asm" -print0 \
+              | tr '\0' '\n' \
+              | grep -E 'x86_64 \(NASM\)|x86_64 \(NASM, System V\)' \
+              | tr '\n' '\0'
           )
 
-          echo "Objects:"
+          echo "Objects built:"
           ls -l build || true
-
-              echo "Skip link (no _start): $o"
-            fi
-          done

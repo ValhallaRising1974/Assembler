@@ -1,0 +1,109 @@
+; ============================================================
+; rle_decompress.asm
+;
+; Descompressor RLE chamável a partir de C
+; Convenção System V AMD64
+;
+; Formato da entrada:
+;   [quantidade][caractere][quantidade][caractere]...[0]
+;
+; Exemplo:
+;   3, 'A', 2, 'B', 0
+;
+; Resultado:
+;   "AAABB"
+;
+; Argumentos:
+;   RDI = ponteiro para o buffer comprimido (src)
+;   RSI = ponteiro para o buffer de destino (dst)
+;   EDX = tamanho total do buffer de destino (max_len)
+;
+; Retorno:
+;   RAX = quantidade de bytes descomprimidos gravados
+;
+; Observações:
+;   - O terminador nulo está incluído no limite max_len.
+;   - Se max_len for zero, nenhuma escrita será realizada.
+;   - A função não chama outras funções.
+;   - RBX é preservado por ser callee-saved.
+; ============================================================
+
+global rle_decompress
+
+section .text
+
+rle_decompress:
+
+    ; --------------------------------------------------------
+    ; Prólogo padrão
+    ; --------------------------------------------------------
+
+    push rbp
+    mov rbp, rsp
+
+    ; RBX é callee-saved pela ABI System V AMD64.
+    ; Como BL será usado no algoritmo, salvamos RBX.
+    push rbx
+
+    ; Após push rbp e push rbx, RSP fica alinhado em 16 bytes.
+    ; A função não realiza chamadas internas, mas o alinhamento
+    ; está adequado caso o código seja expandido futuramente.
+
+    xor eax, eax              ; RAX = contador de bytes escritos
+
+    ; Se max_len == 0, não há espaço nem para '\0'.
+    test edx, edx
+    jz .return
+
+    ; Reservar um byte para o terminador nulo.
+    dec edx
+
+.read_pair:
+
+    ; Ler a quantidade do próximo par RLE.
+    mov bl, byte [rdi]
+
+    ; Quantidade zero indica fim da entrada.
+    test bl, bl
+    jz .terminate
+
+    inc rdi
+
+    ; Ler o caractere associado à quantidade.
+    mov cl, byte [rdi]
+    inc rdi
+
+.repeat_character:
+
+    ; Comparar bytes escritos com o limite útil.
+    ; EDX já foi reduzido em 1 para reservar espaço para '\0'.
+    cmp eax, edx
+    jae .terminate
+
+    ; Gravar um caractere no buffer de destino.
+    mov byte [rsi], cl
+
+    inc rsi
+    inc eax
+
+    ; Repetir até consumir a quantidade indicada.
+    dec bl
+    jnz .repeat_character
+
+    jmp .read_pair
+
+.terminate:
+
+    ; Há espaço garantido para o terminador nulo,
+    ; pois um byte foi reservado no início.
+    mov byte [rsi], 0
+
+.return:
+
+    ; --------------------------------------------------------
+    ; Epílogo
+    ; --------------------------------------------------------
+
+    pop rbx
+    leave
+    ret
